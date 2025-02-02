@@ -6,7 +6,7 @@ It provides CRUD endpoints for job and worker management.
 
 from fastapi import FastAPI, HTTPException, Depends, status, Query
 from pydantic import BaseModel
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
@@ -26,9 +26,9 @@ class JobBase(BaseModel):
     status : Optional[models.Status] = None
 
 class WorkerBase(BaseModel):
-    name : str
-    role : str
-    jobId : int
+    name : Optional[str] = None
+    role : Optional[str] = None
+    jobId : Optional[int] = None
 
 
 def get_db():
@@ -46,7 +46,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 """
 Description: Creates Job in Jobs table
 Params:
-    job - a job object we will add to the jobs row
+    job - a job object we will add to the jobs table
 
 Returns: created job if successful. We also check if job contains all required fields (name, customer) and return 400 if not
 """
@@ -61,6 +61,32 @@ async def create_job(job: JobBase, db: db_dependency):
     db.commit()
     db.refresh(db_job)
     return db_job
+
+
+
+"""
+Description: Bulk creates Job in Jobs table
+Params:
+    jobs - a list of job objects we will add to the jobs table
+
+Returns: a success message if successful. We also check if job contains all required fields (name, customer) and return 400 if not
+"""
+@app.post("/jobs/bulk/", status_code=status.HTTP_201_CREATED)
+async def create_jobs_bulk(jobs: List[JobBase], db: db_dependency):
+    db_jobs = []
+    
+    for job in jobs:
+        db_job = models.Job(**job.dict())
+        if not db_job.name:
+            raise HTTPException(status_code=400, detail="Name field required for all jobs")
+        if not db_job.customer:
+            raise HTTPException(status_code=400, detail="Customer field required for all jobs")
+        db_jobs.append(db_job)
+
+    db.add_all(db_jobs)
+    db.commit()
+    return {"message": f"{len(db_jobs)} jobs created successfully"}
+
 
 
 """
@@ -123,7 +149,6 @@ async def query_jobs(
 
 
 
-
 """
 Description: Deletes Job from job table based on id
 Params:
@@ -139,4 +164,113 @@ async def query_jobs_by_customer(jobId: int, db: db_dependency):
     db.commit()
     return job
 
+
+
+"""
+Description: Creates Worker in Workers table. Note we let the jobid be optional as those can change
+Params:
+    worker - a worker object we will add to the workers table
+
+Returns: created worker if successful. We also check if worker contains all required fields (name) and return 400 if not
+"""
+@app.post("/workers/", status_code=status.HTTP_201_CREATED)
+async def create_worker(worker: WorkerBase, db: db_dependency):
+    db_worker = models.Worker(**worker.dict())
+    if not db_worker.name:
+        raise HTTPException(status_code=400, detail="Name field required")
+    if not db_worker.role:
+        raise HTTPException(status_code=400, detail="Role field required")
+    db.add(db_worker)
+    db.commit()
+    db.refresh(db_worker)
+    return db_worker
+
+
+
+
+"""
+Description: Bulk creates Workers in Workers table. Note we let the jobid be optional as those can change
+Params:
+    workers - a list of worker objects we will add to the workers table
+
+Returns: a success message if successful. We also check if job contains all required fields (name) and return 400 if not
+"""
+@app.post("/workers/bulk/", status_code=status.HTTP_201_CREATED)
+async def create_workers_bulk(workers: List[WorkerBase], db: db_dependency):
+    db_workers = []
+    
+    for worker in workers:
+        db_worker = models.Worker(**worker.dict())
+        if not db_worker.name:
+            raise HTTPException(status_code=400, detail="Name field required")
+        if not db_worker.role:
+            raise HTTPException(status_code=400, detail="Role field required")
+        db_workers.append(db_worker)
+
+    db.add_all(db_workers)
+    db.commit()
+    return {"message": f"{len(db_workers)} workers created successfully"}
+
+
+
+
+"""
+Description: Assigns workers to jobId in Workers table
+Params:
+    jobId - id of job workers will be assigned to
+    workers - a list of worker id we will try assigning to jobId
+
+Returns: a success message if successful. We also check if job contains all required fields (name, customer) and return 400 if not
+"""
+@app.put("/workers/assign/{jobId}", status_code=status.HTTP_200_OK)
+async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):   
+    if jobId is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="jobId is required")
+    job = db.query(models.Job).filter(models.Job.id == jobId).first()
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
+
+    db_workers = db.query(models.Worker).filter(models.Worker.id.in_(workerIds)).all()
+    for worker in db_workers:
+        worker.jobId = jobId
+
+    db.commit()
+    return {"message": f"The following worker ids were assigned to job {jobId}: {str([worker.id for worker in db_workers])}"}
+
+
+
+
+"""
+Description: Queries Workers table with addtional optional parameters
+Params:
+    name - Filter workers based on name (optional)
+    role - Fitler workers based on role (optional)
+    jobId - Filter workers based on Job (optional)
+    page - Page number for pagination (optional)
+    limit - Number of workers per page (optional)
+Returns: All workers matching criteria. We also check if criteria is valid and return 400 if not
+"""
+@app.get("/jobs/", status_code=status.HTTP_200_OK)
+async def query_jobs(
+    db: db_dependency, 
+    name : str = Query(None, description="Filter workers starting based on name"),
+    role : str = Query(None, description="Filter workers starting based on role"),
+    jobId : int = Query(None, description="Filter workers starting based on Job"),
+    page: int = Query(1, description="Page number for pagination"),
+    limit: int = Query(100, description="Number of workers per page"),
+):
+    all_workers = db.query(models.Worker)
+
+    if name:
+        all_jobs = all_workers.filter(models.Worker.name == name)
+    if role:
+        all_jobs = all_workers.filter(models.Worker.role == role)
+    if jobId:
+        job = db.query(models.Job).filter(models.Job.id == jobId).first()
+        if job is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
+        all_jobs = all_workers.filter(models.Worker.jobId == jobId)
+
+    skip = (page - 1) * limit
+    return all_jobs.offset(skip).limit(limit).all()
 

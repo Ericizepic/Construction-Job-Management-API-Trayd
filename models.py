@@ -34,6 +34,6 @@ class Worker(Base):
     __tablename__ = 'workers'
 
     id = Column(Integer, primary_key = True, index = True)
-    name = Column(String(50))
-    role = Column(String(50))
+    name = Column(String(50), unique=False)
+    role = Column(String(50), unique=False)
     jobId = Column(Integer)

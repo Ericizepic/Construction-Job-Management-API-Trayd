@@ -10,6 +10,7 @@ This is a FastAPI project that implements a simple API to manage construction jo
 2. [Setting Up the Environment](#setting-up-the-environment)
 3. [Installing Requirements](#installing-requirements)
 4. [Launching the API](#launching-the-api)
+5. [Examples](#examples)
 
 ---
 
@@ -42,5 +43,8 @@ To launch the API, run the following.
 ```bash
 uvicorn main:app --reload
 ```
+
+
+## Examples
 
 
