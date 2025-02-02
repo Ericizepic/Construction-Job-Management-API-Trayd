@@ -1,3 +1,31 @@
+"""
+api.py
+This module defines a FastAPI-based REST API for managing job records in a database. 
+It provides CRUD endpoints for job management.
+
+API Endpoints:
+    - POST /jobs/:
+        Creates a new job record in the database.
+        Request Body: JobBase (name, customer, startDate, endDate, status)
+        Response: 201 Created
+
+    - GET /jobs/:
+        Retrieves a list of job records (limited to 500 by default).
+        Response: 200 OK, List of Jobs
+
+    - GET /jobs/name/{name}:
+        Retrieves job records by job name.
+        Response: 200 OK, List of Jobs or 404 Not Found
+
+    - GET /jobs/customer/{customer}:
+        Retrieves job records by customer name.
+        Response: 200 OK, List of Jobs or 404 Not Found
+
+    - DELETE /jobs/{jobId}:
+        Deletes a job record by its ID.
+        Response: 200 OK if successful, or 404 Not Found
+"""
+
 from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Annotated
@@ -38,22 +66,20 @@ async def create_job(job: JobBase, db: db_dependency):
     db.commit()
 
 @app.get("/jobs/", status_code=status.HTTP_200_OK)
-async def query_jobs(db: db_dependency):
-    all_jobs = db.query(models.Job)
-    if all_jobs is None:
-        raise HTTPException(status_code=404, detail='Jobs not found')
-    return all_jobs
+async def query_jobs(db: db_dependency, lim = 500):
+    return db.query(models.Job).limit(lim).all()
 
-@app.get("/jobs/{name}", status_code=status.HTTP_200_OK)
+
+@app.get("/jobs/name/{name}", status_code=status.HTTP_200_OK)
 async def query_jobs_by_name(name: str, db: db_dependency):
-    jobs = db.query(models.Job).filter(models.Job.name == name)
+    jobs = db.query(models.Job).filter(models.Job.name == name).all()
     if jobs is None:
         raise HTTPException(status_code=404, detail='Job name not found')
     return jobs
 
-@app.get("/jobs/{customer}", status_code=status.HTTP_200_OK)
+@app.get("/jobs/customer/{customer}", status_code=status.HTTP_200_OK)
 async def query_jobs_by_customer(customer: str, db: db_dependency):
-    jobs = db.query(models.Job).filter(models.Job.customer == customer)
+    jobs = db.query(models.Job).filter(models.Job.customer == customer).all()
     if jobs is None:
         raise HTTPException(status_code=404, detail='Customer not found')
     return jobs

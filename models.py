@@ -1,12 +1,26 @@
+"""
+This module defines the SQLAlchemy ORM models for the application.
+
+Status enum which we use to define possible job statuses
+
+Job class used to define schema for job table. SQLAlchemy automatically maps to the database 
+schema and provides methods to perform CRUD operations
+"""
+
 from sqlalchemy import Boolean, Column, Integer, String, Date, Enum
 from database import Base
 import enum
 
+"Status enum which we use to define possible job statuses"
 class Status(enum.Enum):
     InProgress = 0
     Completed = 1
 
 
+"""
+Job class used to define schema for job table. SQLAlchemy automatically maps to the database 
+schema and provides methods to perform CRUD operations
+"""
 class Job(Base):
     __tablename__ = 'jobs'
 
