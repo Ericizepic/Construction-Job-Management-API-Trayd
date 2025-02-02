@@ -5,28 +5,35 @@ Status enum which we use to define possible job statuses
 
 Job class used to define schema for job table. SQLAlchemy automatically maps to the database 
 schema and provides methods to perform CRUD operations
+
+Worker class used to define schema for job table. SQLAlchemy automatically maps to the database 
+schema and provides methods to perform CRUD operations
 """
 
 from sqlalchemy import Boolean, Column, Integer, String, Date, Enum
 from database import Base
 import enum
 
-"Status enum which we use to define possible job statuses"
 class Status(enum.Enum):
     InProgress = 0
     Completed = 1
 
 
-"""
-Job class used to define schema for job table. SQLAlchemy automatically maps to the database 
-schema and provides methods to perform CRUD operations
-"""
 class Job(Base):
     __tablename__ = 'jobs'
 
     id = Column(Integer, primary_key = True, index = True)
-    name = Column(String(50), unique = True)
-    customer = Column(String(50))
+    name = Column(String(50), unique=False)
+    customer = Column(String(50), unique=False)
     startDate = Column(Date)
     endDate = Column(Date)
     status = Column(Enum(Status))
+
+
+class Worker(Base):
+    __tablename__ = 'workers'
+
+    id = Column(Integer, primary_key = True, index = True)
+    name = Column(String(50))
+    role = Column(String(50))
+    jobId = Column(Integer)
