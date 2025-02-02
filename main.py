@@ -244,7 +244,7 @@ async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):
 Description: Queries Workers table with addtional optional parameters
 Params:
     name - Filter workers based on name (optional)
-    role - Fitler workers based on role (optional)
+    role - Filter workers based on role (optional)
     jobId - Filter workers based on Job (optional)
     page - Page number for pagination (optional)
     limit - Number of workers per page (optional)
