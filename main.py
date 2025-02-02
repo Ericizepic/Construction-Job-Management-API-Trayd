@@ -23,15 +23,13 @@ class JobBase(BaseModel):
     customer : Optional[str] = None
     startDate : Optional[date] = None
     endDate : Optional[date] = None
-    status : Optional[models.Status] = None
+    status : Optional[str] = None
 
 class WorkerBase(BaseModel):
     name : Optional[str] = None
     role : Optional[str] = None
     jobId : Optional[int] = None
 
-class WorkerAssignment(BaseModel):
-    workerIds: List[int]
 
 
 def get_db():
@@ -75,10 +73,10 @@ Params:
 Returns: a success message if successful. We also check if job contains all required fields (name, customer) and return 400 if not
 """
 @app.post("/jobs/bulk/", status_code=status.HTTP_201_CREATED)
-async def create_jobs_bulk(jobs: List[JobBase], db: db_dependency):
+async def create_jobs_bulk(jobList: List[JobBase], db: db_dependency):
     db_jobs = []
     
-    for job in jobs:
+    for job in jobList:
         db_job = models.Job(**job.dict())
         if not db_job.name:
             raise HTTPException(status_code=400, detail="Name field required for all jobs")
@@ -113,7 +111,7 @@ async def query_jobs(
     customer : str = Query(None, description="Filter jobs starting based on customer"),
     startAfter: date = Query(None, description="Filter jobs starting after this date"),
     endBefore: date = Query(None, description="Filter jobs ending before this date"),
-    status: models.Status = Query(None, description="Filter jobs by status"),
+    status: str = Query(None, description="Filter jobs by status"),
     page: int = Query(1, description="Page number for pagination"),
     limit: int = Query(100, description="Number of jobs per page"),
     sort_by: str = Query("startDate", description="Field to sort by ('name', 'customer', 'startDate', 'endDate', 'status')"),
@@ -134,7 +132,7 @@ async def query_jobs(
     if endBefore:
         all_jobs = all_jobs.filter(models.Job.endDate and models.Job.endDate <= endBefore)
     if status:
-        all_jobs = all_jobs.filter(models.Job.status == status)
+        all_jobs = all_jobs.filter(models.Job.status == models.Status[status])
 
     # Handle sorting
     if sort_by not in ["name", "customer", "startDate", "endDate", "status"]:
@@ -229,19 +227,19 @@ Params:
 
 Returns: a success message if successful. We also check if job contains all required fields (name, customer) and return 400 if not
 """
-# @app.put("/workers/assign/{jobId}", status_code=status.HTTP_200_OK)
-# async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):   
-#     if jobId is None:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="jobId is required")
-#     if db.query(models.Job).filter(models.Job.id == jobId).first() is None:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
+@app.put("/workers/assign/{jobId}", status_code=status.HTTP_200_OK)
+async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):   
+    if jobId is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="jobId is required")
+    if db.query(models.Job).filter(models.Job.id == jobId).first() is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
 
-#     db_workers = db.query(models.Worker).filter(models.Worker.id.in_(workerIds)).all()
-#     for worker in db_workers:
-#         worker.jobId = jobId
+    db_workers = db.query(models.Worker).filter(models.Worker.id.in_(workerIds)).all()
+    for worker in db_workers:
+        worker.jobId = jobId
 
-#     db.commit()
-#     return {"message": f"The following worker ids were assigned to job {jobId}: {str([worker.id for worker in db_workers])}"}
+    db.commit()
+    return {"message": f"The following worker ids were assigned to job {jobId}: {str([worker.id for worker in db_workers])}"}
 
 
 
@@ -256,7 +254,7 @@ Params:
     limit - Number of workers per page (optional)
 Returns: All workers matching criteria. We also check if criteria is valid and return 400 if not
 """
-@app.get("/jobs/", status_code=status.HTTP_200_OK)
+@app.get("/workers/", status_code=status.HTTP_200_OK)
 async def query_jobs(
     db: db_dependency, 
     name : str = Query(None, description="Filter workers starting based on name"),
