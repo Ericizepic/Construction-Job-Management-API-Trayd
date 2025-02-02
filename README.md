@@ -47,7 +47,6 @@ uvicorn main:app --reload
 
 ## Examples
 
-Some examples of using the API can be found at the following Postman Collection: https://api.postman.com/collections/24746310-1b966f2a-1f7b-4acd-9a79-ad165956bd58?access_key=PMAT-01JK2YPAK3T1K5C32TW15PP3NM
-
+Some examples of using the API can be found at the following Postman Collection: https://elements.getpostman.com/redirect?entityId=24746310-1b966f2a-1f7b-4acd-9a79-ad165956bd58&entityType=collection
 
 
