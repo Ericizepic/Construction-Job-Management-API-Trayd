@@ -16,13 +16,14 @@ This is a FastAPI project that implements a simple API to manage construction jo
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Ericizepic/Construction-Job-Management-API-Trayd
-   cd Construction-Job-Management-API-Trayd
-   ```
+Clone the repository:
+```bash
+git clone https://github.com/Ericizepic/Construction-Job-Management-API-Trayd
+cd Construction-Job-Management-API-Trayd
+```
 
-2. Setting Up the Environment
+
+## Setting Up the Environment
 
 Create an .env file at the root of the directory and populate the following variables: 
 ``` .env
@@ -32,13 +33,13 @@ DB_HOST = <your host ex localhost>
 DB_DBNAME = <your db name>
 ```
 
-3. Install Requirements
+## Install Requirements
 ```bash
 pip install -r requirements.txt
 ```
 
 
-4. Launching the API
+## Launching the API
 
 ```bash
 uvicorn main:app --reload
