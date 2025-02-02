@@ -114,11 +114,10 @@ async def query_jobs(
     status: str = Query(None, description="Filter jobs by status"),
     page: int = Query(1, description="Page number for pagination"),
     limit: int = Query(100, description="Number of jobs per page"),
-    sort_by: str = Query("startDate", description="Field to sort by ('name', 'customer', 'startDate', 'endDate', 'status')"),
+    sort_by: str = Query("id", description="Field to sort by ('name', 'customer', 'startDate', 'endDate', 'status')"),
     sort_order: str = Query("asc", description="Sort order ('asc' for ascending, 'desc' for descending)"),
 ):
     all_jobs = db.query(models.Job)
-
     if name:
         all_jobs = all_jobs.filter(models.Job.name == name)
     if customer:
@@ -135,7 +134,7 @@ async def query_jobs(
         all_jobs = all_jobs.filter(models.Job.status == models.Status[status])
 
     # Handle sorting
-    if sort_by not in ["name", "customer", "startDate", "endDate", "status"]:
+    if sort_by not in ["id", "name", "customer", "startDate", "endDate", "status"]:
         raise HTTPException(status_code=400, detail="Invalid sort field")
     if sort_order == "asc":
         order_by = asc(getattr(models.Job, sort_by))
