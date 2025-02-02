@@ -30,6 +30,9 @@ class WorkerBase(BaseModel):
     role : Optional[str] = None
     jobId : Optional[int] = None
 
+class WorkerAssignment(BaseModel):
+    workerIds: List[int]
+
 
 def get_db():
     db = SessionLocal()
@@ -176,6 +179,8 @@ Returns: created worker if successful. We also check if worker contains all requ
 @app.post("/workers/", status_code=status.HTTP_201_CREATED)
 async def create_worker(worker: WorkerBase, db: db_dependency):
     db_worker = models.Worker(**worker.dict())
+    if db_worker.jobId and db.query(models.Job).filter(models.Job.id == db_worker.jobId).first() is None:
+        raise HTTPException(status_code=400, detail="Job not found")
     if not db_worker.name:
         raise HTTPException(status_code=400, detail="Name field required")
     if not db_worker.role:
@@ -201,6 +206,8 @@ async def create_workers_bulk(workers: List[WorkerBase], db: db_dependency):
     
     for worker in workers:
         db_worker = models.Worker(**worker.dict())
+        if db_worker.jobId and db.query(models.Job).filter(models.Job.id == db_worker.jobId).first() is None:
+            raise HTTPException(status_code=400, detail="Job not found")
         if not db_worker.name:
             raise HTTPException(status_code=400, detail="Name field required")
         if not db_worker.role:
@@ -218,24 +225,23 @@ async def create_workers_bulk(workers: List[WorkerBase], db: db_dependency):
 Description: Assigns workers to jobId in Workers table
 Params:
     jobId - id of job workers will be assigned to
-    workers - a list of worker id we will try assigning to jobId
+    workerIds - a list of worker id we will try assigning to jobId
 
 Returns: a success message if successful. We also check if job contains all required fields (name, customer) and return 400 if not
 """
-@app.put("/workers/assign/{jobId}", status_code=status.HTTP_200_OK)
-async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):   
-    if jobId is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="jobId is required")
-    job = db.query(models.Job).filter(models.Job.id == jobId).first()
-    if job is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
+# @app.put("/workers/assign/{jobId}", status_code=status.HTTP_200_OK)
+# async def assign_workers(jobId : int, workerIds: List[int], db: db_dependency):   
+#     if jobId is None:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="jobId is required")
+#     if db.query(models.Job).filter(models.Job.id == jobId).first() is None:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="no job with jobId was found")
 
-    db_workers = db.query(models.Worker).filter(models.Worker.id.in_(workerIds)).all()
-    for worker in db_workers:
-        worker.jobId = jobId
+#     db_workers = db.query(models.Worker).filter(models.Worker.id.in_(workerIds)).all()
+#     for worker in db_workers:
+#         worker.jobId = jobId
 
-    db.commit()
-    return {"message": f"The following worker ids were assigned to job {jobId}: {str([worker.id for worker in db_workers])}"}
+#     db.commit()
+#     return {"message": f"The following worker ids were assigned to job {jobId}: {str([worker.id for worker in db_workers])}"}
 
 
 
