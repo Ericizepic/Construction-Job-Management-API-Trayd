@@ -24,8 +24,7 @@ cd Construction-Job-Management-API-Trayd
 
 
 ## Setting Up the Environment
-
-Create an .env file at the root of the directory and populate the following variables: 
+You will need to create a MySQL db instance. After this is done, create an .env file at the root of the directory and populate the following variables: 
 ``` .env
 DB_USERNAME = <your username ex root>
 DB_PASSWORD = <your password>
@@ -40,7 +39,7 @@ pip install -r requirements.txt
 
 
 ## Launching the API
-
+To launch the API, run the following.
 ```bash
 uvicorn main:app --reload
 ```
