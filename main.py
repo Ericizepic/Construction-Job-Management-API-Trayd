@@ -23,7 +23,7 @@ class JobBase(BaseModel):
     customer : Optional[str] = None
     startDate : Optional[date] = None
     endDate : Optional[date] = None
-    status : Optional[str] = None
+    status : Optional[models.Status] = None
 
 class WorkerBase(BaseModel):
     name : Optional[str] = None
